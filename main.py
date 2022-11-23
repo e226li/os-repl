@@ -1,6 +1,7 @@
 import logging
 import paramiko
 import sshim
+import pylxd
 import os
 import re
 
@@ -12,7 +13,7 @@ def check_auth_none(self, username):
 
 
 def check_auth_password(self, username, password):
-    if password == os.environ["ssh-password"]:
+    if username == os.environ["ssh-username"] and password == os.environ["ssh-password"]:
         return paramiko.AUTH_SUCCESSFUL
     return paramiko.AUTH_FAILED
 
