@@ -24,3 +24,10 @@ def destroy_instance(container_name: str):
     instance.delete(wait=True)
 
     return True
+
+
+def execute_command(container_name: str, command: str):
+    instance = lxd_client.instances.get(container_name)
+    result_tuple = instance.execute([command])
+
+    return result_tuple
