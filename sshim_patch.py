@@ -25,4 +25,5 @@ Handler.check_auth_none = check_auth_none
 Handler.check_auth_password = check_auth_password
 Handler.check_auth_publickey = check_auth_publickey
 Handler.enable_auth_gssapi = enable_auth_gssapi
+Handler.get_allowed_auths = paramiko.server.ServerInterface.get_allowed_auths
 
