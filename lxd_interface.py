@@ -1,4 +1,6 @@
+import time
 import pylxd
+import ipaddress
 
 lxd_client = pylxd.client.Client()
 
@@ -6,12 +8,14 @@ lxd_client = pylxd.client.Client()
 def create_instance(container_name: str):
     config = {'name': container_name, 'source':
     {'type': 'image', "mode": "pull", "server": "https://cloud-images.ubuntu.com/daily", "protocol": "simplestreams",
-     'alias': 'lts/amd64'}, 'security.nesting': 'true'}
+     'alias': 'lts/amd64'}, 'config': {'security.nesting': 'true'}}
 
     instance = lxd_client.instances.create(config, wait=True)
-    instance.start()
+    instance.start(wait=True)
 
-    return True
+    while type(ipaddress.ip_address(instance.state().network['eth0']['addresses'][0]['address'])) != ipaddress.IPv4Address:
+        time.sleep(0.1)
+    return instance.state().network['eth0']['addresses'][0]
 
 
 def destroy_instance(container_name: str):
