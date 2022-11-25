@@ -82,17 +82,21 @@ class Runner(threading.Thread):
     def __init__(self, client, channel: paramiko.Channel):
         threading.Thread.__init__(self, name='sshim.Runner(%s)' % channel.chanid)
         self.instance_name = "instance-" + str(uuid.uuid4())
+        self.instance_password = str(uuid.uuid4())  # TODO: secure password generation
         self.daemon = True
         self.client = client
         self.channel = channel
         self.channel.settimeout(None)
 
     def run(self) -> None:
-        lxd_interface.create_instance(self.instance_name)
+        vm_ip = lxd_interface.create_instance(self.instance_name)
 
-        with paramiko.ProxyCommand(command_line=f'lxc exec {self.instance_name} -- /bin/bash') as proxy_command:
-            self.channel.recv = proxy_command.recv
-            self.channel.send = proxy_command.send
+        with paramiko.SSHClient() as ssh_client:
+            ssh_client.connect(vm_ip, username='root', passphrase=self.instance_password)
+            tmp_channel = ssh_client.invoke_shell()
+
+            for attribute in dir(tmp_channel):
+                setattr(self.channel, attribute, getattr(tmp_channel, attribute))
 
 
 Script.expect = expect
