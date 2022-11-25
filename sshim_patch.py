@@ -3,6 +3,13 @@ import paramiko
 import os
 import six
 import codecs
+import uuid
+import lxd_interface
+import threading
+import logging
+
+logging.basicConfig(level='DEBUG')
+logger = logging.getLogger()
 
 
 def expect(self, line, echo=True) -> str:
@@ -47,6 +54,13 @@ def expect(self, line, echo=True) -> str:
         raise
 
 
+def check_channel_shell_request(self, channel):
+    logger.debug(channel)
+    Runner(self, channel).start()
+
+    return True
+
+
 def check_auth_none(self, username):
     if username == os.environ["ssh-username"]:
         return paramiko.AUTH_PARTIALLY_SUCCESSFUL
@@ -64,8 +78,26 @@ def check_auth_publickey(self, username, key):
     return paramiko.AUTH_FAILED
 
 
+class Runner(threading.Thread):
+    def __init__(self, client, channel: paramiko.Channel):
+        threading.Thread.__init__(self, name='sshim.Runner(%s)' % channel.chanid)
+        self.instance_name = "instance-" + str(uuid.uuid4())
+        self.daemon = True
+        self.client = client
+        self.channel = channel
+        self.channel.settimeout(None)
+
+    def run(self) -> None:
+        lxd_interface.create_instance(self.instance_name)
+
+        with paramiko.ProxyCommand(command_line=f'lxc exec {self.instance_name} -- /bin/bash') as proxy_command:
+            self.channel.recv = proxy_command.recv
+            self.channel.send = proxy_command.send
+
+
 Script.expect = expect
 
+Handler.check_channel_shell_request = check_channel_shell_request
 Handler.check_auth_none = check_auth_none
 Handler.check_auth_password = check_auth_password
 Handler.check_auth_publickey = check_auth_publickey
