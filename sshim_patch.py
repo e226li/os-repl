@@ -7,6 +7,7 @@ import uuid
 import lxd_interface
 import threading
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -86,16 +87,24 @@ class Runner(threading.Thread):
         self.client = client
         self.channel = channel
         self.channel.settimeout(None)
+        self.transport = None
 
     def run(self) -> None:
-        vm_ip = lxd_interface.create_instance(self.instance_name, self.instance_password)
+        vm_ip = lxd_interface.create_instance(self.instance_name, self.instance_password)['address']
 
         with paramiko.SSHClient() as ssh_client:
-            ssh_client.connect(vm_ip, username='root', passphrase=self.instance_password)
+            ssh_client.set_missing_host_key_policy(paramiko.WarningPolicy)
+            ssh_client.connect(vm_ip, username='root', password=self.instance_password)
+            self.transport = ssh_client.get_transport()
             tmp_channel = ssh_client.invoke_shell()
 
-            for attribute in dir(tmp_channel):
-                setattr(self.channel, attribute, getattr(tmp_channel, attribute))
+            logger.debug(tmp_channel)
+            logger.debug(self.channel)
+            self.channel.in_buffer = tmp_channel.in_buffer
+            self.channel.in_stderr_buffer = tmp_channel.in_stderr_buffer
+
+            while True:
+                time.sleep(1000)
 
 
 Script.expect = expect
