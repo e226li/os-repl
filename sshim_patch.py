@@ -1,57 +1,14 @@
 from sshim import *
 import paramiko
 import os
-import six
-import codecs
 import uuid
 import lxd_interface
 import threading
 import logging
 import time
+import inspect
 
 logger = logging.getLogger(__name__)
-
-
-def expect(self, line, echo=True) -> str:
-    """
-        Expect a line of input from the user. If this has the `match` method, it will call it on the input and return
-        the result, otherwise it will use the equality operator, ==. Notably, if a regular expression is passed in
-        its match method will be called and the matchdata returned. This allows you to use matching groups to pull
-        out interesting data and operate on it.
-        If ``echo`` is set to False, the server will not echo the input back to the client.
-    """
-    buffer = six.BytesIO()
-
-    try:
-        while True:
-            byte = self.fileobj.read(1)
-
-            if not byte or byte == '\x04':
-                raise EOFError()
-            elif byte == b'\t':
-                pass
-            elif byte == b'\x7f':
-                if buffer.tell() > 0:
-                    self.sendall('\b \b')
-                    buffer.truncate(buffer.tell() - 1)
-            elif byte == b'\x1b' and self.fileobj.read(1) == b'[':
-                command = self.fileobj.read(1)
-                if hasattr(self.delegate, 'cursor'):
-                    self.delegate.cursor(command)
-            elif byte in (b'\r', b'\n'):
-                break
-            else:
-                buffer.write(byte)
-                if echo:
-                    self.sendall(byte)
-
-        if echo:
-            self.sendall('\r\n')
-
-        return codecs.decode(buffer.getvalue(), self.encoding)
-
-    except Exception:
-        raise
 
 
 def check_channel_shell_request(self, channel):
@@ -98,16 +55,17 @@ class Runner(threading.Thread):
             self.transport = ssh_client.get_transport()
             tmp_channel = ssh_client.invoke_shell()
 
-            logger.debug(tmp_channel)
-            logger.debug(self.channel)
-            self.channel.in_buffer = tmp_channel.in_buffer
-            self.channel.in_stderr_buffer = tmp_channel.in_stderr_buffer
+            self.channel.other_channel = tmp_channel
+            self.channel.__getattribute__ = Patch.__getattribute__
 
             while True:
                 time.sleep(1000)
 
 
-Script.expect = expect
+class Patch:
+    def __getattribute__(self, item):
+        getattr(self.other_channel, item)
+
 
 Handler.check_channel_shell_request = check_channel_shell_request
 Handler.check_auth_none = check_auth_none
