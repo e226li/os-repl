@@ -8,8 +8,7 @@ import lxd_interface
 import threading
 import logging
 
-logging.basicConfig(level='DEBUG')
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def expect(self, line, echo=True) -> str:
@@ -68,7 +67,7 @@ def check_auth_none(self, username):
 
 
 def check_auth_password(self, username, password):
-    print(os.environ["ssh-username"], os.environ["ssh-password"])
+    logger.debug(os.environ["ssh-username"])
     if username == os.environ["ssh-username"] and password == os.environ["ssh-password"]:
         return paramiko.AUTH_SUCCESSFUL
     return paramiko.AUTH_FAILED
@@ -89,7 +88,7 @@ class Runner(threading.Thread):
         self.channel.settimeout(None)
 
     def run(self) -> None:
-        vm_ip = lxd_interface.create_instance(self.instance_name)
+        vm_ip = lxd_interface.create_instance(self.instance_name, self.instance_password)
 
         with paramiko.SSHClient() as ssh_client:
             ssh_client.connect(vm_ip, username='root', passphrase=self.instance_password)

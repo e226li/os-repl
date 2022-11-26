@@ -1,6 +1,5 @@
 import logging
 import time
-
 import paramiko
 import sshim_patch as sshim
 import lxd_interface
