@@ -20,7 +20,7 @@ def check_channel_shell_request(self, channel):
 
 
 def check_auth_none(self, username):
-    if username == os.environ["ssh-username"]:
+    if username == os.environ["SSH_USERNAME"]:
         return paramiko.AUTH_PARTIALLY_SUCCESSFUL
     return paramiko.AUTH_FAILED
 
