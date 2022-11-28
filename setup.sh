@@ -3,12 +3,12 @@ set -e
 
 export DEBIAN_FRONTEND=noninteractive
 
-sudo apt-get update -y
-sudo apt-get upgrade -y
-sudo apt-get install snapd
-sudo snap install lxd
+apt-get update -y
+apt-get upgrade -y
+apt-get install snapd
+snap install lxd
 
 yes '' | lxd init
 
-sudo apt-get install python3-pip
+apt-get install python3-pip
 python3 -m pip install paramiko pylxd sshim
