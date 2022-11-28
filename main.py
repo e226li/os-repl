@@ -20,3 +20,5 @@ try:
     server.run()
 except KeyboardInterrupt:
     server.stop()
+finally:
+    lxd_interface.destroy_all_instances()

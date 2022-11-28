@@ -28,6 +28,14 @@ def destroy_instance(container_name: str):
     return True
 
 
+def destroy_all_instances():
+    for instance in lxd_client.instances.all():
+        instance.stop(wait=True)
+        instance.delete(wait=True)
+
+    return True
+
+
 def execute_command(container_name: str, command: list, stdin_payload=None):
     instance = lxd_client.instances.get(container_name)
     result_tuple = instance.execute(command, stdin_payload=stdin_payload)

@@ -70,6 +70,10 @@ class Runner(threading.Thread):
                         break
                     self.channel.send(x)
 
+            client_channel.close()
+            self.channel.close()
+            lxd_interface.destroy_instance(self.instance_name)
+
 
 Handler.check_channel_shell_request = check_channel_shell_request
 Handler.check_auth_none = check_auth_none
