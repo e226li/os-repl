@@ -5,6 +5,7 @@ import uuid
 import lxd_interface
 import threading
 import logging
+import select
 import time
 import inspect
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def check_channel_shell_request(self, channel):
-    logger.debug(channel)
+    logger.debug("Check channel shell request: %s" % channel.get_id())
     Runner(self, channel).start()
 
     return True
@@ -53,18 +54,21 @@ class Runner(threading.Thread):
             ssh_client.set_missing_host_key_policy(paramiko.WarningPolicy)
             ssh_client.connect(vm_ip, username='root', password=self.instance_password)
             self.transport = ssh_client.get_transport()
-            tmp_channel = ssh_client.invoke_shell()
-
-            self.channel.other_channel = tmp_channel
-            self.channel.__getattribute__ = Patch.__getattribute__
+            client_channel = ssh_client.invoke_shell()
 
             while True:
-                time.sleep(1000)
+                r, w, e = select.select([client_channel, self.channel], [], [])
+                if self.channel in r:
+                    x = self.channel.recv(1024)
+                    if len(x) == 0:
+                        break
+                    client_channel.send(x)
 
-
-class Patch:
-    def __getattribute__(self, item):
-        getattr(self.other_channel, item)
+                if client_channel in r:
+                    x = client_channel.recv(1024)
+                    if len(x) == 0:
+                        break
+                    self.channel.send(x)
 
 
 Handler.check_channel_shell_request = check_channel_shell_request
