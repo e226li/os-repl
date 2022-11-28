@@ -26,8 +26,8 @@ def check_auth_none(self, username):
 
 
 def check_auth_password(self, username, password):
-    logger.debug(os.environ["ssh-username"])
-    if username == os.environ["ssh-username"] and password == os.environ["ssh-password"]:
+    logger.debug(f"{username} just tried to connect")
+    if username == os.environ["SSH_USERNAME"] and password == os.environ["SSH_PASSWORD"]:
         return paramiko.AUTH_SUCCESSFUL
     return paramiko.AUTH_FAILED
 
