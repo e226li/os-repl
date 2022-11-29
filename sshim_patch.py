@@ -55,8 +55,8 @@ def check_auth_publickey(self, username, key):
 
 class Runner(threading.Thread):
     def __init__(self, client, transport: paramiko.Transport):
-        threading.Thread.__init__(self, name='sshim.Runner')
         self.instance_name = "instance-" + str(uuid.uuid4())
+        threading.Thread.__init__(self, name=f'sshim.Runner {self.instance_name}')
         self.instance_password = str(uuid.uuid4())  # TODO: secure password generation
         self.daemon = True
         self.client = client
@@ -80,12 +80,16 @@ class Runner(threading.Thread):
                     if self.shell_channel in r:
                         x = self.shell_channel.recv(1024)
                         if len(x) == 0:
+                            self.shell_channel.close()
                             self.shell_channel = None
+                            continue
                         client_shell_channel.send(x)
                     if client_shell_channel in r:
                         x = client_shell_channel.recv(1024)
                         if len(x) == 0:
+                            self.shell_channel.close()
                             self.shell_channel = None
+                            continue
                         self.shell_channel.send(x)
 
                 if self.sftp_channel is not None:  # TODO: move this to function
@@ -93,28 +97,21 @@ class Runner(threading.Thread):
                     if self.sftp_channel in r:
                         x = self.sftp_channel.recv(1024)
                         if len(x) == 0:
+                            self.sftp_channel.close()
                             self.sftp_channel = None
+                            continue
                         client_sftp_channel.send(x)
                     if client_sftp_channel in r:
                         x = client_sftp_channel.recv(1024)
                         if len(x) == 0:
+                            self.sftp_channel.close()
                             self.sftp_channel = None
+                            continue
                         self.sftp_channel.send(x)
 
                 if self.transport.is_active() is False:
                     break
 
-            try:
-                client_shell_channel.close()
-                self.shell_channel.close()
-            except AttributeError as e:
-                logger.debug(e)
-            try:
-                client_sftp_channel.close()
-                self.sftp_channel.close()
-            except AttributeError as e:
-                logger.debug(e)
-                
             lxd_interface.destroy_instance(self.instance_name)
 
     def set_shell_channel(self, channel):
