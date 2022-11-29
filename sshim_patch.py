@@ -26,6 +26,14 @@ def check_channel_shell_request(self, channel):
     return True
 
 
+def check_channel_subsystem_request(self, channel, name):
+    if name == 'sftp':
+        self.runner.set_sftp_channel(channel)
+        return True
+    else:
+        return False
+
+
 def check_auth_none(self, username):
     if username == os.environ["SSH_USERNAME"]:
         return paramiko.AUTH_PARTIALLY_SUCCESSFUL
@@ -53,6 +61,7 @@ class Runner(threading.Thread):
         self.daemon = True
         self.client = client
         self.transport = transport
+        # self.transport.set_subsystem_handler('sftp', handler=paramiko.SFTPServer)
         self.shell_channel = None
         self.sftp_channel = None
 
@@ -103,12 +112,14 @@ class Runner(threading.Thread):
         self.shell_channel = channel
         self.shell_channel.settimeout(None)
 
-    def set_scp_channel(self, channel):
+    def set_sftp_channel(self, channel):
         self.sftp_channel = channel
         self.sftp_channel.settimeout(None)
 
 
+Handler.check_channel_request = check_channel_request
 Handler.check_channel_shell_request = check_channel_shell_request
+Handler.check_channel_subsystem_request = check_channel_subsystem_request
 Handler.check_auth_none = check_auth_none
 Handler.check_auth_password = check_auth_password
 Handler.check_auth_publickey = check_auth_publickey
