@@ -27,6 +27,13 @@ def check_channel_shell_request(self, channel):
     return True
 
 
+def check_channel_exec_request(self, channel):
+    logger.debug("Check channel exec request: %s" % channel.get_id())
+    self.runner.set_shell_channel(channel)
+
+    return True
+
+
 def check_channel_subsystem_request(self, channel, name):
     if name == 'sftp':
         self.runner.set_sftp_channel(channel)
@@ -81,6 +88,7 @@ class Runner(threading.Thread):
             client_sftp_channel = ssh_client.open_sftp().get_channel()
 
             last_save_time = round(time.time())
+            lxd_interface.set_description(self.instance_name, str(last_save_time))
             while True:
                 current_time_rounded = round(time.time())
                 if current_time_rounded != last_save_time:
