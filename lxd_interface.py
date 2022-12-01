@@ -53,3 +53,23 @@ def setup_ssh(container_name: str, instance_password: str):
     execute_command(container_name, ["passwd", "root"], stdin_payload=f"{instance_password}\n{instance_password}")
 
     return True
+
+
+def get_networking(container_name: str):
+    instance = lxd_client.instances.get(container_name)
+
+    return instance.state().network['eth0']['addresses'][0]
+
+
+def set_description(container_name: str, new_value: str):
+    instance = lxd_client.instances.get(container_name)
+    instance.description = new_value
+    instance.save()
+
+    return True
+
+
+def get_description(container_name: str) -> str:
+    instance = lxd_client.instances.get(container_name)
+
+    return instance.description
