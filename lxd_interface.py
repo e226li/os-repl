@@ -12,10 +12,9 @@ def create_instance(container_name: str, instance_password: str):
 
     instance = lxd_client.instances.create(config, wait=True)
     instance.start(wait=True)
+    setup_ssh(container_name, instance_password)
     while type(ipaddress.ip_address(instance.state().network['eth0']['addresses'][0]['address'])) != ipaddress.IPv4Address:
         time.sleep(0.1)
-
-    setup_ssh(container_name, instance_password)
 
     return instance.state().network['eth0']['addresses'][0]
 
@@ -57,6 +56,10 @@ def setup_ssh(container_name: str, instance_password: str):
 
 def get_networking(container_name: str):
     instance = lxd_client.instances.get(container_name)
+
+    while instance.state().network is None or \
+            type(ipaddress.ip_address(instance.state().network['eth0']['addresses'][0]['address'])) != ipaddress.IPv4Address:
+        time.sleep(0.1)
 
     return instance.state().network['eth0']['addresses'][0]
 
