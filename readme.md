@@ -1,6 +1,6 @@
-# lxd-project
+# OSRepl
 
-An application that launches lxc containers when an incoming ssh request is detected.
+Ephemeral Linux Containers launched on SSH request for developing and fun.
 
 ## Demo
 
