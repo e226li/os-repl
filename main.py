@@ -15,7 +15,7 @@ def connect_handler(script: sshim.Script):
     pass
 
 
-server = sshim.Server(connect_handler, address='0.0.0.0', port=3022)
+server = sshim.Server(connect_handler, address='127.0.0.1', port=3022)
 try:
     server.run()
 except KeyboardInterrupt:
